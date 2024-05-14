@@ -203,3 +203,80 @@ export const refreshAccessToken = asyncHandler(async(req, res) => {
 
 })
 
+ export const changePassword = asyncHandler(async(req, res) => {
+    
+    const {oldPassword, newPassword} = req.body;
+
+    const user = await User.findById(req.user?._id);
+    
+    const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+    
+    if(!isPasswordCorrect) throw new ApiError(401, "Incorrect Password");
+    
+    user.password = newPassword;
+    
+    await user.save({validateBeforeSave: false});
+
+    return res.state(200).json(new ApiResponse(200, {}, "Password changed successfully"))
+
+ })
+
+ export const getCurrentUser = asyncHandler(async(req, res) => {
+    return res.status(200).json(new ApiResponse(200, req.user, "User info"));
+ })
+
+
+ export const updateAccountDetails = asyncHandler(async(req, res) => {
+
+    const {fullName, email} = req.body;
+
+    if(!fullName || !email) throw new ApiError(401, "Incorrect Payload");
+
+    const user = await User.findByIdAndUpdate(req.user?._id, {
+        $set : {
+            fullName,
+            email
+        }},
+        {new: true}
+    ).selectO("-password");
+
+    res.status(200).json(new ApiResponse(200, user, "User updated successfully"));
+ })
+
+ export const updateAvatar = asyncHandler(async(req, res) => {
+    // need to verify the user and fetch the files using middlewares(verifyJWT and multer)
+
+    const avatarLocalPath = req.file?.path;
+
+    if(!avatarLocalPath) throw new ApiError(401, "Avatar file is missing");
+
+    //Cloudinary
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar) throw new ApiError(401, "File not uploaded");
+
+    const user = await User.findByIdAndUpdate(req.user?._id, {$set : {avatar : avatar.url}}, {new: true}).select("-password");
+
+    return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfully"))
+
+ })
+
+ export const updateCoverImage = asyncHandler(async(req, res) => {
+    // need to verify the user and fetch the files using middlewares(verifyJWT and multer)
+
+    const coverImageLocalPath = req.file?.path;
+
+    if(!coverImageLocalPath) throw new ApiError(401, "cover image file is missing");
+
+    //Cloudinary
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+    if(!coverImage) throw new ApiError(401, "File not uploaded");
+
+    const user = await User.findByIdAndUpdate(req.user?._id, {$set : {coverImage : avatar.url}}, {new: true}).select("-password");
+
+    return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfully"))
+
+ })
