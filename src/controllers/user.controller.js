@@ -258,6 +258,8 @@ export const refreshAccessToken = asyncHandler(async(req, res) => {
 
     const user = await User.findByIdAndUpdate(req.user?._id, {$set : {avatar : avatar.url}}, {new: true}).select("-password");
 
+    // TODO :- Remove OLD image
+
     return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfully"))
 
  })
@@ -279,4 +281,109 @@ export const refreshAccessToken = asyncHandler(async(req, res) => {
 
     return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfully"))
 
+ })
+
+ export const getUserChannnelProfile = asyncHandler(async(req, res) => {
+    const {username} = req.params;
+
+    if(!username?.trim()) throw new ApiError(401, "Username is not present");
+
+    const channel = await User.aggregate([
+        {
+            $match : {
+                username : username?.toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField : "channel",
+                as : "subs"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField : "subscriber",
+                as : "subscribedTo"
+            }
+        },
+        {
+            $addFields : {
+                subscriberCount : {
+                    $size : "$subs"
+                },
+                channelSubscriptionCount : {
+                    $size : "$subscribedTo"
+                },
+                isSubscribed : {
+                    $cond : {
+                        if: {$in : [req.user?._id, "$subs.subscriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            $project : {
+                fullName : 1,
+                username : 1,
+                email : 1,
+                createdAt : 1,
+                coverImage : 1,
+                avatar : 1,
+                subscriberCount : 1,
+                channelSubscriptionCount: 1,
+                isSubscribed : 1
+            }
+        }
+    ]);
+
+    if(channel?.length === 0) throw new ApiError(401, "Channel not found");
+
+    console.log(channel);
+
+    return res.status(200).json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+
+ });
+
+export const getWatchHistory = asyncHandler(async(req, res) => {
+    const user = await User.aggregate([
+        {
+            $match : {
+                _id : req.user?.id
+            },
+            $lookup: {
+                from: "video",
+                localField : "watchHistory",
+                foreignField : "_id",
+                as: "watchHistory",
+                pipeline : [
+                    {
+                        $lookup: {
+                            from : "user",
+                            localField : "owner",
+                            foreignField : "_id",
+                            as: "owner",
+                            pipeline: {
+                                $project: {
+                                    fullName : 1,
+                                    username : 1,
+                                    avatar : 1
+                                }
+                            }
+                        },
+                        $addFields: {
+                            owner : {
+                                $first : "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
  })
