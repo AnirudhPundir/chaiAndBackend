@@ -238,7 +238,7 @@ export const refreshAccessToken = asyncHandler(async(req, res) => {
             email
         }},
         {new: true}
-    ).selectO("-password");
+    ).select("-password");
 
     res.status(200).json(new ApiResponse(200, user, "User updated successfully"));
  })
