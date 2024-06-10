@@ -14,6 +14,8 @@ app.use(cookieParser());
 
 //TODO :- create a token controller as well
 // TODO :- create a common controller for creating different entities
+// TODO :- create a common util to handle different types of error messages
+// TODO :- Implement a logger
 
 //routes import
 import userRouter from "../src/routes/user.routes.js";
@@ -22,6 +24,7 @@ import dashboardRouter from "./routes/dashboard.routes.js";
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import likeRouter from "./routes/like.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
+import subscriptionRouter from "./routes/subscription.routes.js";
 
 //routes declaration
 
@@ -40,6 +43,9 @@ app.use("/api/v1/healthCheck", healthCheckRouter);
 //healthcheck
 app.use("/api/v1/like", likeRouter);
 
-app.use("/api/v1/like", playlistRouter)
+//playlist
+app.use("/api/v1/playlist", playlistRouter);
 
+//subscriptiion
+app.use("/api/v1/subscription", subscriptionRouter);
 export {app};
