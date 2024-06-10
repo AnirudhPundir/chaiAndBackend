@@ -41,5 +41,81 @@ export const getUserPlaylists = asyncHandler(async(req, res) => {
 });
 
 export const  getUserPlaylistById = asyncHandler(async(req, res) => {
+    // TODO : get playlist by Id
+
+    const {playlistId} = req.params;
+
+    if(!playlistId) throw new ApiError(401, "Playlist Id not present");
+
+    const playlist = await Playlist.findById(playlistId);
+
+    if(!playlist) throw new ApiError(401, "Playlist not found");
+
+    return res.status(200).json(200, playlist, "Playlist found"); 
+});
+
+export const addVideoToPlaylist = asyncHandler(async(req, res) => {
+    const {playlistId, videoId} = req.params;
     
+    if(!(playlistId && videoId)) throw new ApiError(401, "Playlist or video is missing");
+
+    const playlist = await Playlist.findByIdAndUpdate(playlistId, {
+        $push : {
+            videos: videoId
+        }
+    }, {new: true})
+
+    if(!playlist) throw new ApiError(401, "Video wasn't addded");;
+
+    return res.status(200).json(200, playlist, "Video was added tio the playlist");
+});
+
+export const removeVideoFromPlaylist = asyncHandler(async(req, res) => {
+    const {playlistId, videoId} = req.params;
+
+    if(!(playlistId && videoId)) throw new ApiError(401, "Playlist or video is missing");
+
+    const playlist = await Playlist.findByIdAndUpdate(playlistId, {
+        $pull: {videos: {$in: [videoId]}}
+    });
+
+    if(!playlist) throw new ApiError(401, "Video wasn't removed");
+
+    return res.status(200).json(200, playlist, "Video was removed");
+});
+
+export const  deletePlaylist = asyncHandler(async(req, res) => {
+    const {playlistId} = req.params;
+
+    if(!playlistId) throw new ApiError(401, "Playlist Id not present");
+
+    Playlist.findByIdAndDelete(playlistId, (err, docs) => {
+        if(err) {
+            console.log(err)
+        }
+    });
+
+    return res.status(200).json(200, {}, "Playlist removed")
+});
+
+export const updatePlaylist = asyncHandler( async(req, res) => {
+    const {playlistId} = req.params;
+
+    const {name, description} = req.body;
+
+    if(!playlistId) throw new ApiError(401, "Invalid input: PlaylistId not present");
+
+    if(!(name || description)) throw new ApiError(401, "Invalid input: name or/and description are missing");
+
+    const playlist = await Playlist.findByIdAndUpdate(playlistId, {
+        $set: {
+            name, 
+            description
+        }
+    }, {new: true});
+    
+
+    if(!playlist) throw new ApiError(401, "Operation Failed: Playlist not updated");
+
+    return res.status(200).json(200, playlist, "Playlist updated successfully");
 })
